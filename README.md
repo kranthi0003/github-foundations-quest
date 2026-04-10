@@ -12,12 +12,12 @@
 | 🎯 Quest Progress | |
 |---|---|
 | **Level** | 🥈 Apprentice |
-| **XP** | 220 / 1,745 |
-| **Quests** | 6 / 49 completed |
+| **XP** | 245 / 1,745 |
+| **Quests** | 7 / 49 completed |
 | **Domains** | 0 / 7 cleared |
 
 ```
-[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 12%
+[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 14%
 ```
 <!-- PROGRESS_END -->
 
