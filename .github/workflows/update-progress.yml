@@ -1,0 +1,144 @@
+name: 🎮 Update Quest Progress
+
+on:
+  issues:
+    types: [closed, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  update-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Calculate progress
+        uses: actions/github-script@v7
+        id: calc
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              per_page: 100,
+            });
+
+            // XP map by label
+            const xpMap = { '📗 Easy': 10, '📙 Medium': 25, '📕 Hard': 50, '🏆 Boss': 100 };
+            let totalXP = 0, earnedXP = 0, totalQuests = 0, closedQuests = 0;
+            const domainStatus = {};
+
+            for (const issue of issues) {
+              if (issue.pull_request) continue; // skip PRs
+              const labels = issue.labels.map(l => l.name);
+              
+              // Find XP label
+              let questXP = 0;
+              for (const [label, xp] of Object.entries(xpMap)) {
+                if (labels.includes(label)) { questXP = xp; break; }
+              }
+              if (questXP === 0) continue; // not a quest issue
+
+              totalQuests++;
+              totalXP += questXP;
+
+              // Find domain
+              const domainLabel = labels.find(l => l.startsWith('Domain'));
+              if (domainLabel) {
+                if (!domainStatus[domainLabel]) domainStatus[domainLabel] = { total: 0, closed: 0 };
+                domainStatus[domainLabel].total++;
+              }
+
+              if (issue.state === 'closed') {
+                closedQuests++;
+                earnedXP += questXP;
+                if (domainLabel) domainStatus[domainLabel].closed++;
+              }
+            }
+
+            // Determine level
+            const levels = [
+              { title: '🎓 Certified!', xp: 1745 },
+              { title: '👑 Master', xp: 1300 },
+              { title: '💎 Expert', xp: 900 },
+              { title: '🥇 Practitioner', xp: 500 },
+              { title: '🥈 Apprentice', xp: 200 },
+              { title: '🥉 Noob', xp: 0 },
+            ];
+            let level = levels[levels.length - 1].title;
+            for (const l of levels) {
+              if (earnedXP >= l.xp) { level = l.title; break; }
+            }
+
+            // Domains cleared
+            let domainsCleared = 0;
+            for (const [, s] of Object.entries(domainStatus)) {
+              if (s.total > 0 && s.closed === s.total) domainsCleared++;
+            }
+
+            // Progress bar (30 chars)
+            const pct = totalQuests > 0 ? Math.round((closedQuests / totalQuests) * 100) : 0;
+            const filled = Math.round(pct * 30 / 100);
+            const bar = '█'.repeat(filled) + '░'.repeat(30 - filled);
+
+            core.setOutput('level', level);
+            core.setOutput('earned_xp', earnedXP);
+            core.setOutput('total_xp', totalXP);
+            core.setOutput('closed', closedQuests);
+            core.setOutput('total', totalQuests);
+            core.setOutput('domains', domainsCleared);
+            core.setOutput('pct', pct);
+            core.setOutput('bar', bar);
+
+      - name: Update README
+        run: |
+          LEVEL="${{ steps.calc.outputs.level }}"
+          EARNED="${{ steps.calc.outputs.earned_xp }}"
+          TOTAL_XP="${{ steps.calc.outputs.total_xp }}"
+          CLOSED="${{ steps.calc.outputs.closed }}"
+          TOTAL="${{ steps.calc.outputs.total }}"
+          DOMAINS="${{ steps.calc.outputs.domains }}"
+          PCT="${{ steps.calc.outputs.pct }}"
+          BAR="${{ steps.calc.outputs.bar }}"
+
+          # Build replacement block
+          PROGRESS=$(cat <<EOF
+          <!-- PROGRESS_START -->
+          | 🎯 Quest Progress | |
+          |---|---|
+          | **Level** | ${LEVEL} |
+          | **XP** | ${EARNED} / 1,745 |
+          | **Quests** | ${CLOSED} / ${TOTAL} completed |
+          | **Domains** | ${DOMAINS} / 7 cleared |
+
+          \`\`\`
+          [${BAR}] ${PCT}%
+          \`\`\`
+          <!-- PROGRESS_END -->
+          EOF
+          )
+
+          # Replace between markers
+          python3 - <<'PYEOF'
+          import re
+          with open('README.md', 'r') as f:
+              content = f.read()
+          marker_re = r'<!-- PROGRESS_START -->.*?<!-- PROGRESS_END -->'
+          replacement = """$PROGRESS"""
+          # Clean up indentation
+          lines = replacement.strip().split('\n')
+          cleaned = '\n'.join(line.strip() for line in lines)
+          new_content = re.sub(marker_re, cleaned, content, flags=re.DOTALL)
+          with open('README.md', 'w') as f:
+              f.write(new_content)
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "🎮 Progress: ${{ steps.calc.outputs.earned_xp }} XP | ${{ steps.calc.outputs.closed }}/${{ steps.calc.outputs.total }} quests | ${{ steps.calc.outputs.level }}"
+          git push
