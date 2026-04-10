@@ -12,12 +12,12 @@
 | 🎯 Quest Progress | |
 |---|---|
 | **Level** | 🥉 Noob |
-| **XP** | 10 / 1,745 |
-| **Quests** | 1 / 49 completed |
+| **XP** | 45 / 1,745 |
+| **Quests** | 3 / 49 completed |
 | **Domains** | 0 / 7 cleared |
 
 ```
-[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 2%
+[██░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 6%
 ```
 <!-- PROGRESS_END -->
 
