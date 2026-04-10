@@ -8,18 +8,7 @@
 
 ## 🏆 Progress Dashboard
 
-<!-- PROGRESS_START -->
-| 🎯 Quest Progress | |
-|---|---|
-| **Level** | 🥉 Noob |
-| **XP** | 0 / 1,745 |
-| **Quests** | 0 / 49 completed |
-| **Domains** | 0 / 7 cleared |
-
-```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
-```
-<!-- PROGRESS_END -->
+$PROGRESS
 
 ## 🗺️ The Quest Map
 
