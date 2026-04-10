@@ -4,6 +4,8 @@
 >
 > Close issues → Earn XP → Level up → Get certified! 🎓
 
+📚 **[Study Resources & Free Practice Tests →](RESOURCES.md)**
+
 ---
 
 ## 🏆 Progress Dashboard
